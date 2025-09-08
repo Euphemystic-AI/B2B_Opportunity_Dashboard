@@ -33,10 +33,13 @@ Set the following environment variables (copy `.env.example` and update values a
 
 - `OPENAI_API_KEY`: OpenAI API key (required)
 - `OPENAI_MODEL`: Optional model name (default: `gpt-4o`)
-- `OS_URL`: OpenSearch bulk endpoint, e.g. `https://host:9200/index/_bulk` (required)
+- `OS_URL`: OpenSearch bulk endpoint (required). Either:
+  - `https://host:9200/index/_bulk` and omit `OS_INDEX`, or
+  - `https://host:9200/_bulk` and set `OS_INDEX` to the index name
 - `OS_USERNAME`: OpenSearch username (required)
 - `OS_PASSWORD`: OpenSearch password (required)
 - `OS_CA_CERT`: Path to CA certificate file (optional but recommended)
+- `OS_INDEX`: Optional explicit index name. When set, the script adds `_index` to each bulk action, so `OS_URL` can be the root `_bulk` endpoint.
 - `MEMBER_JSON_PATH`: Input JSON path (default: `/apps/chamber/member_index.json`)
 - `PROMPT01_PATH`: Prompt template path (default: `./Prompt01.txt`)
 - `LOG_DIR`: Directory for logs (default: `./logs` if the configured path is not writable)
@@ -56,7 +59,7 @@ The script normalizes either schema automatically. Key mappings include:
 - Fallbacks for `website_url`, `social_links`, and `about_html`
 
 ## Running
-- With the default `member_index.json`:
+- With the default `member_index.json` (index provided in URL):
 
 ```
 # PowerShell
@@ -67,10 +70,12 @@ $env:OS_PASSWORD="opensearch-pass"
 python 5company_lookup.py
 ```
 
-- With the Boulder directory file:
+- With the Boulder directory file (index set via OS_INDEX):
 
 ```
 # PowerShell
+$env:OS_URL="https://host:9200/_bulk"
+$env:OS_INDEX="my-index"
 $env:MEMBER_JSON_PATH="./boulder_chamber_directory_compiled.json"
 python 5company_lookup.py
 ```
@@ -78,7 +83,9 @@ python 5company_lookup.py
 The script writes logs to `./logs` by default and flushes to OpenSearch in modest bulk batches.
 
 ## OpenSearch Notes
-- Provide the full `_bulk` endpoint in `OS_URL` (including index name).
+- Provide a valid `_bulk` endpoint in `OS_URL`.
+  - If `OS_INDEX` is not set, include the index name in the URL: `.../index/_bulk`.
+  - If `OS_INDEX` is set, you may use `.../_bulk` and the index is specified per action.
 - The payload is NDJSON: alternating action and document lines with a trailing newline.
 - TLS verification is enabled by default; provide `OS_CA_CERT` to trust a custom CA.
 
@@ -96,4 +103,3 @@ Contributions welcome. See `CONTRIBUTING.md`.
 
 ## License
 This repository currently has no license specified. If you plan to open source it, add a `LICENSE` file (e.g., MIT/Apache-2.0). For private/internal use, coordinate with your org’s policy.
-

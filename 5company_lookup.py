@@ -55,6 +55,8 @@ OS_URL           = getenv_required("OS_URL")
 OS_USERNAME      = getenv_required("OS_USERNAME")
 OS_PASSWORD      = getenv_required("OS_PASSWORD")
 OS_CA_CERT       = os.getenv("OS_CA_CERT")  # optional but recommended
+# Optional: specify target index explicitly; if provided, the bulk action includes _index
+OS_INDEX         = os.getenv("OS_INDEX", "").strip() or None
 
 MEMBER_JSON_PATH = os.getenv("MEMBER_JSON_PATH", "/apps/chamber/member_index.json")
 PROMPT01_PATH    = os.getenv("PROMPT01_PATH", "./Prompt01.txt")
@@ -260,8 +262,11 @@ def add(company: dict, ai_json: str):
     normalize_afi(doc)
 
     # Add to NDJSON bulk body
+    action_meta = {"_id": doc_id}
+    if OS_INDEX:
+        action_meta["_index"] = OS_INDEX
     bulk.extend([
-        json.dumps({"index": {"_id": doc_id}}),
+        json.dumps({"index": action_meta}),
         json.dumps(doc, ensure_ascii=False)
     ])
 
