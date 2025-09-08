@@ -39,6 +39,16 @@ def getenv_required(name: str) -> str:
         raise SystemExit(f"Missing required environment variable: {name}")
     return val
 
+# Model selection notes (2024–2025):
+# - gpt-4o (default): Strong JSON fidelity, fast, great quality/cost balance for
+#   structured extraction and short reasoning. Recommended for this enrichment pipeline.
+# - gpt-4.1: Stronger reasoning and consistency for harder classification tasks; typically
+#   a bit slower/costlier than 4o. Use if you see edge cases needing deeper reasoning.
+# - gpt-4o-mini: Lower cost and higher throughput; good for large batch runs where
+#   perfection isn’t required. Pair with stricter validation/fallbacks.
+# - o1 / o1-mini (reasoning series): Optimized for step-by-step reasoning, but higher
+#   latency/cost and not ideal when you require strict JSON with tight cost/latency SLAs.
+# Select via env var OPENAI_MODEL if you want to override the default.
 OPENAI_MODEL     = os.getenv("OPENAI_MODEL", "gpt-4o")
 
 OS_URL           = getenv_required("OS_URL")
