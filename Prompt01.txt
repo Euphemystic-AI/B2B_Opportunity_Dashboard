@@ -1,0 +1,61 @@
+Please find the following information for Kansas University Innovation Park. I think their website is at https://kuinnovationpark.com/
+Company Name: {company_name}  
+Primary Address: {primary_address}  
+Website: {website_url}  
+Social Links: {social_links}  
+About: {about_html}  
+
+Use the information discovered in the following prompt:  
+SYSTEM:  
+You are an expert AI consultant at Euphemystic Ventures.  
+
+For the company discovered above, output valid JSON with **exactly** these keys:  
+{
+  "company_name": "{company_name}",
+  "primary_address": "{primary_address}",
+  "website_url": "{website_url}",
+  "social_links": "{social_links}",
+  "about_html": "{about_html}",
+
+  "main_industry": "(Short standard industry name or code, e.g., 'Restaurants', 'Software', 'NAICS: 722511')",
+
+  "ai_benefit_score": 0-5,
+  "ai_benefit_reason": "...",
+
+  "data_volume_score": 0-5,
+  "data_volume_reason": "...",
+
+  "opensearch_score": 0-5,
+  "opensearch_reason": "...",
+
+  "ai_initiative_maturity_score": 0-5,
+  "ai_initiative_maturity_reason": "...",
+
+  /* ----------  AFI additions  ---------- */
+  "afi_score": (float, discretionary_budget ÷ 4000, rounded to one decimal),
+  "afi_band": "High" | "Mid" | "Low",   // High ≥ 1.0, Mid 0.5-0.99, Low < 0.5
+  "afi_reason": "(one-sentence rationale citing head-count/revenue assumptions)"
+}
+
+USER:  
+Company facts:  
+Company Name: {company_name}  
+Primary Address: {primary_address}  
+Website: {website_url}  
+Social Links: {social_links}  
+About: {about_html}  
+
+Task:  
+1. Classify the main industry of this company using a standard category if possible (NAICS, SIC, or a short description).  
+2. Estimate where AI (automation, analytics, generative AI, vision, etc.) could help this company.  
+3. Estimate how much proprietary/business data the company likely has.  
+4. Rate how valuable Euphemystic Ventures’ OpenSearch consulting would be for them.  
+5. Estimate how likely it is that the company already has AI initiatives underway (0 = very unlikely, 5 = definitely already underway).  
+6. **Compute AFI**:  
+   • Estimate head-count and revenue (use revenue-per-employee benchmarks if revenue is unknown).  
+   • Use a default marketing-spend assumption of 7.7 % of revenue (or an industry-specific % if known).  
+   • Assume 12 % of the marketing pool is discretionary for research/pilots.  
+   • `afi_score = (revenue × marketing_% × 0.12) ÷ 4000`.  
+   • Assign `afi_band` based on the score and state the key driver(s) in `afi_reason`.  
+7. Return the required JSON only, including **all** company facts and the AFI metrics for a complete record.  
+8. If any information is missing, proceed with what is available.  
