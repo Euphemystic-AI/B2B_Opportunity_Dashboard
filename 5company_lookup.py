@@ -93,6 +93,52 @@ def render_placeholders(template: str, company: dict) -> str:
     out = re.sub(r"\{[a-zA-Z0-9_]+\}", "", out)
     return out
 
+def unify_company_record(rec: dict) -> dict:
+    """Normalize differing input schemas into the expected fields.
+    - Supports both member_index.json and boulder_chamber_directory_compiled.json
+    - Populates: company_name, primary_address, website_url, social_links, about_html
+    - Preserves original keys as-is where possible
+    """
+    out = dict(rec)
+
+    # company_name: fall back to 'name'
+    if not out.get("company_name") and out.get("name"):
+        out["company_name"] = out.get("name")
+
+    # primary_address: handle nested address object or string
+    if not out.get("primary_address"):
+        addr = out.get("address")
+        if isinstance(addr, dict):
+            parts = [addr.get("street"), addr.get("city"), addr.get("region"), addr.get("postal_code")]
+            out["primary_address"] = ", ".join([p for p in parts if p])
+        elif isinstance(addr, str):
+            out["primary_address"] = addr
+        else:
+            out.setdefault("primary_address", "")
+
+    # website_url: common synonyms
+    if not out.get("website_url") and out.get("website"):
+        out["website_url"] = out.get("website")
+
+    # source_url: map detail_url if present (kept for traceability)
+    if not out.get("source_url") and out.get("detail_url"):
+        out["source_url"] = out.get("detail_url")
+
+    # social_links: ensure list type even if missing
+    if out.get("social_links") is None:
+        out["social_links"] = []
+    if "social_links" not in out:
+        # try common alternatives; default to empty list
+        links = out.get("social") or out.get("socials") or []
+        out["social_links"] = links if isinstance(links, list) else ([links] if links else [])
+
+    # about_html: fall back to 'about' or 'description'
+    if not out.get("about_html"):
+        about = out.get("about") or out.get("description") or ""
+        out["about_html"] = about
+
+    return out
+
 def split_prompt01(prompt_text: str) -> tuple[str, str]:
     """
     Split the Prompt01.txt content into SYSTEM and USER blocks.
@@ -113,6 +159,8 @@ try:
     companies = json.load(open(MEMBER_JSON_PATH, encoding="utf-8"))
     if not isinstance(companies, list):
         raise ValueError("member_index.json must be a list of company objects")
+    # Normalize records to a common schema so either file format works
+    companies = [unify_company_record(c) for c in companies]
     log(f"Loaded {len(companies):,} companies from {MEMBER_JSON_PATH}")
 except Exception as e:
     raise SystemExit(f"Cannot load companies: {e}")
@@ -184,7 +232,7 @@ bulk = []
 
 def add(company: dict, ai_json: str):
     """Merge company facts with AI JSON and add to bulk payload."""
-    doc_id = (company.get("company_name", "noid")
+    doc_id = ((company.get("company_name") or company.get("name") or "noid")
               .replace(" ", "_").replace("/", "").lower())
 
     doc = dict(company)  # start with existing facts
